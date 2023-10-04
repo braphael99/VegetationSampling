@@ -12,3 +12,6 @@ https://www.rdocumentation.org/packages/MASS/versions/7.3-58.3/topics/birthwt
 
 nps api documentation:
 https://www.nps.gov/subjects/developer/api-documentation.htm#/activities/parks
+
+Python on Big Query:
+https://cloud.google.com/run/docs/quickstarts/build-and-deploy/deploy-python-service
