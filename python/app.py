@@ -1,10 +1,12 @@
 import requests
 import sqlite3
 from sqlite3 import Error
+import scipy
 import numpy as np
 import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
+from scipy.stats import linregress
 import math
 from io import BytesIO
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
@@ -192,7 +194,7 @@ def getDBHClass():
     return {"Classes": classes} 
 
 @app.route("/circumHeight/")
-def ageweightViz():
+def circumheightViz():
     circumferences =[]
     heights = []
     conn = None
@@ -225,6 +227,86 @@ def ageweightViz():
     plt.xlabel("Circumferences (in CM)")
     plt.ylabel("Heights (in Meters)")
     plt.title("Circumferences vs. Heights") 
+    canvas = FigureCanvas(fig)
+    img = BytesIO()
+    fig.savefig(img)
+    img.seek(0)
+    return send_file(img, mimetype = "image/png")
+
+@app.route("/diamHeight/")
+def diamheightViz():
+    diameters =[]
+    heights = []
+    conn = None
+
+    try:
+        conn = sqlite3.connect("../dbs/vegetationSampling.db")
+        conn.row_factory = sqlite3.Row
+        sql = """ 
+            SELECT vegetation_sampling.DBH, vegetation_sampling.height
+            FROM vegetation_sampling
+            ORDER BY vegetation_sampling.id
+        """
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        rows = cursor.fetchall()  
+        for row in rows:
+            diameter = row["DBH"]
+            height = row["height"]
+            diameters.append(diameter)
+            heights.append(height)
+
+    except Error as e:
+        print(f"Error opening the database {e}")
+        abort(500)
+    finally:
+        if conn:
+            conn.close()
+    fig, ax = plt.subplots()
+    plt.scatter(diameters, heights)
+    plt.xlabel("Diameters (in CM)")
+    plt.ylabel("Heights (in Meters)")
+    plt.title("Diameters vs. Heights") 
+    canvas = FigureCanvas(fig)
+    img = BytesIO()
+    fig.savefig(img)
+    img.seek(0)
+    return send_file(img, mimetype = "image/png")
+
+@app.route("/basiHeight/")
+def basiheightViz():
+    basiAreas =[]
+    heights = []
+    conn = None
+
+    try:
+        conn = sqlite3.connect("../dbs/vegetationSampling.db")
+        conn.row_factory = sqlite3.Row
+        sql = """ 
+            SELECT vegetation_sampling.BA, vegetation_sampling.height
+            FROM vegetation_sampling
+            ORDER BY vegetation_sampling.id
+        """
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        rows = cursor.fetchall()  
+        for row in rows:
+            basiArea = row["BA"]
+            height = row["height"]
+            basiAreas.append(basiArea)
+            heights.append(height)
+
+    except Error as e:
+        print(f"Error opening the database {e}")
+        abort(500)
+    finally:
+        if conn:
+            conn.close()
+    fig, ax = plt.subplots()
+    plt.scatter(basiAreas, heights)
+    plt.xlabel("Basimetric Areas (in Sq. Meter by Hectare)")
+    plt.ylabel("Heights (in Meters)")
+    plt.title("Basimetric Areas vs. Heights") 
     canvas = FigureCanvas(fig)
     img = BytesIO()
     fig.savefig(img)
