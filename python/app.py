@@ -305,9 +305,9 @@ def basiheightViz():
             conn.close()
     fig, ax = plt.subplots()
     plt.scatter(basiAreas, heights)
-    plt.xlabel("Basimetric Areas (in Sq. Meter by Hectare)")
+    plt.xlabel("Basal Areas (in Sq. Meter by Hectare)")
     plt.ylabel("Heights (in Meters)")
-    plt.title("Basimetric Areas vs. Heights") 
+    plt.title("Basal Areas vs. Heights") 
     canvas = FigureCanvas(fig)
     img = BytesIO()
     fig.savefig(img)
@@ -348,6 +348,83 @@ def circumCorrel():
     correlation = r[0][1]
     return {"correlation" : correlation}
 
+@app.route("/diamCorrel")
+def diamCorrel():
+    diameters = []
+    heights = []
+    correlation = 0.0
+
+    try:
+        conn = sqlite3.connect("../dbs/vegetationSampling.db")
+        conn.row_factory = sqlite3.Row
+        sql = """ 
+            SELECT vegetation_sampling.DBH, vegetation_sampling.height
+            FROM vegetation_sampling
+            ORDER BY vegetation_sampling.id
+        """
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        rows = cursor.fetchall()  
+        for row in rows:
+            diameter = row["DBH"]
+            height = row["height"]
+            diameters.append(diameter)
+            heights.append(height)
+
+    except Error as e:
+        print(f"Error opening the database {e}")
+        abort(500)
+    finally:
+        if conn:
+            conn.close()
+    
+    r = np.corrcoef(heights, diameters)
+    correlation = r[0][1]
+    return {"correlation" : correlation}
+
+@app.route("/basiCorrel")
+def basiCorrel():
+    basiAreas = []
+    heights = []
+    correlation = 0.0
+
+    try:
+        conn = sqlite3.connect("../dbs/vegetationSampling.db")
+        conn.row_factory = sqlite3.Row
+        sql = """ 
+            SELECT vegetation_sampling.BA, vegetation_sampling.height
+            FROM vegetation_sampling
+            ORDER BY vegetation_sampling.id
+        """
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        rows = cursor.fetchall()  
+        for row in rows:
+            basiArea = row["BA"]
+            height = row["height"]
+            basiAreas.append(basiArea)
+            heights.append(height)
+
+    except Error as e:
+        print(f"Error opening the database {e}")
+        abort(500)
+    finally:
+        if conn:
+            conn.close()
+    
+    r = np.corrcoef(heights, basiAreas)
+    correlation = r[0][1]
+    return {"correlation" : correlation}
+
+@app.route('/hypothTest')
+def hypothTest():
+    return 0
+
+@app.route('/linearRegress')
+def linearRegress():
+    linearRegression = ""
+    return {"linear regression": linearRegression}
+
 @app.route('/images/<image_filename>')
 def get_image(image_filename):
     image_directory = './resources/img/'
@@ -377,6 +454,10 @@ def basiPage():
 @app.route("/predictiveStats")
 def predictiveStats():
     return render_template("predictiveStats.html")
+
+@app.route("/newObservations")
+def newObservations():
+    return render_template("newObservations.html")
 
 if __name__ == '__main__':
    app.run()
