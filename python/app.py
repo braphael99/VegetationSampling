@@ -21,6 +21,7 @@ from flask import redirect
 from flask import render_template
 from flask import send_file
 from flask import jsonify
+from flask import send_from_directory
 
 app = Flask(__name__)
 
@@ -312,6 +313,50 @@ def basiheightViz():
     fig.savefig(img)
     img.seek(0)
     return send_file(img, mimetype = "image/png")
+
+@app.route("/circumCorrel")
+def circumCorrel():
+    circumferences = []
+    heights = []
+    correlation = 0.0
+
+    try:
+        conn = sqlite3.connect("../dbs/vegetationSampling.db")
+        conn.row_factory = sqlite3.Row
+        sql = """ 
+            SELECT vegetation_sampling.CBH, vegetation_sampling.height
+            FROM vegetation_sampling
+            ORDER BY vegetation_sampling.id
+        """
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        rows = cursor.fetchall()  
+        for row in rows:
+            circumference = row["CBH"]
+            height = row["height"]
+            circumferences.append(circumference)
+            heights.append(height)
+
+    except Error as e:
+        print(f"Error opening the database {e}")
+        abort(500)
+    finally:
+        if conn:
+            conn.close()
+    
+    r = np.corrcoef(heights, circumferences)
+    correlation = r[0][1]
+    return {"correlation" : correlation}
+
+@app.route('/images/<image_filename>')
+def get_image(image_filename):
+    image_directory = './resources/img/'
+    return send_from_directory(image_directory, image_filename)
+
+@app.route('/js/<js_filename>')
+def get_js(js_filename):
+    js_directory = './resources/js/'
+    return send_from_directory(js_directory, js_filename)
 
 @app.route("/")
 def index():
