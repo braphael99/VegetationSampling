@@ -1,3 +1,8 @@
+#Author: Blake Raphael
+#App Name: Vegetation Testing
+
+#Importing all of our necessary python libraries
+#**Could use some pruning, maybe in later releases we will sift through this**
 import requests
 import statistics
 import sqlite3
@@ -23,9 +28,13 @@ from flask import send_file
 from flask import jsonify
 from flask import send_from_directory
 
+#Naming our app for flask
 app = Flask(__name__)
-testMean = 0.0
 
+#Our first 6 routes are incredibly boring (created as a part of the proof of concept phase), as they are just basic
+#routes that send raw JSON out. Could be useful in implmenting things down the road.
+
+#Circumferences route (accesses database and sends raw JSON)
 @app.route("/CBH")
 def getCBH():
     circumferences = []
@@ -54,6 +63,7 @@ def getCBH():
 
     return {"Circumferences": circumferences} 
 
+#Height route (access database and send raw JSON)
 @app.route("/height")
 def getHeight():
     heights = []
@@ -82,6 +92,7 @@ def getHeight():
 
     return {"Heights": heights} 
 
+#Diameter route (accesses database and sends raw JSON)
 @app.route("/DBH")
 def getDBH():
     diameters = []
@@ -110,6 +121,7 @@ def getDBH():
 
     return {"Diameters": diameters} 
 
+#Basal Area route (accesses database and sends raw JSON)
 @app.route("/BA")
 def getBA():
     basiAreas = []
@@ -138,6 +150,7 @@ def getBA():
 
     return {"Basimetric Areas": basiAreas} 
 
+#Dead route (accesses database and sends raw JSON)
 @app.route("/dead")
 def getDead():
     deaths = []
@@ -166,7 +179,7 @@ def getDead():
 
     return {"Dead": deaths} 
 
-
+#DBHClass route (accesses database and sends raw JSON)
 @app.route("/DBHClass")
 def getDBHClass():
     classes = []
@@ -195,6 +208,9 @@ def getDBHClass():
 
     return {"Classes": classes} 
 
+#Our first interesting routes, sending graph data out
+
+#Circumference and Height Graph route
 @app.route("/circumHeight/")
 def circumheightViz():
     circumferences =[]
@@ -215,8 +231,8 @@ def circumheightViz():
         for row in rows:
             circumference = row["CBH"]
             height = row["height"]
-            circumferences.append(circumference)
-            heights.append(height)
+            circumferences.append(float(circumference))
+            heights.append(float(height))
 
     except Error as e:
         print(f"Error opening the database {e}")
@@ -224,17 +240,27 @@ def circumheightViz():
     finally:
         if conn:
             conn.close()
+
+    #performing a linear regression to get our line of best fit
+    res = stats.linregress(circumferences, heights)
     fig, ax = plt.subplots()
-    plt.scatter(circumferences, heights)
+
+    #plotting both our scatter plot and line of best fit along with labeling our graph
+    plt.plot(circumferences, heights, 'o', label = "original data")
+    ax.axline((0,res.intercept), slope = res.slope, label = "fitted line", color = "blue")
     plt.xlabel("Circumferences (in CM)")
     plt.ylabel("Heights (in Meters)")
-    plt.title("Circumferences vs. Heights") 
+    plt.title("Circumferences vs. Heights")
+    plt.legend()
+
+    #converting our plot to an image to send to our webpage
     canvas = FigureCanvas(fig)
     img = BytesIO()
     fig.savefig(img)
     img.seek(0)
     return send_file(img, mimetype = "image/png")
 
+#Diameter and Height graph route
 @app.route("/diamHeight/")
 def diamheightViz():
     diameters =[]
@@ -255,8 +281,8 @@ def diamheightViz():
         for row in rows:
             diameter = row["DBH"]
             height = row["height"]
-            diameters.append(diameter)
-            heights.append(height)
+            diameters.append(float(diameter))
+            heights.append(float(height))
 
     except Error as e:
         print(f"Error opening the database {e}")
@@ -264,17 +290,27 @@ def diamheightViz():
     finally:
         if conn:
             conn.close()
+
+    #performing a linear regression to get our line of best fit
+    res = stats.linregress(diameters, heights)     
     fig, ax = plt.subplots()
-    plt.scatter(diameters, heights)
+
+    #plotting both our scatter plot and line of best fit along with labeling our graph
+    plt.plot(diameters, heights, 'o', label = "original data")
+    ax.axline((0,res.intercept), slope = res.slope, label = "fitted line", color = "blue")
     plt.xlabel("Diameters (in CM)")
     plt.ylabel("Heights (in Meters)")
     plt.title("Diameters vs. Heights") 
+    plt.legend()
+
+    #converting our plot to an image to send to our webpage
     canvas = FigureCanvas(fig)
     img = BytesIO()
     fig.savefig(img)
     img.seek(0)
     return send_file(img, mimetype = "image/png")
 
+#Basal Area and Height graph route
 @app.route("/basiHeight/")
 def basiheightViz():
     basiAreas =[]
@@ -295,8 +331,8 @@ def basiheightViz():
         for row in rows:
             basiArea = row["BA"]
             height = row["height"]
-            basiAreas.append(basiArea)
-            heights.append(height)
+            basiAreas.append(float(basiArea))
+            heights.append(float(height))
 
     except Error as e:
         print(f"Error opening the database {e}")
@@ -304,17 +340,29 @@ def basiheightViz():
     finally:
         if conn:
             conn.close()
+    
+
+    #performing a linear regression to get our line of best fit
+    res = stats.linregress(basiAreas, heights)     
     fig, ax = plt.subplots()
-    plt.scatter(basiAreas, heights)
+
+    #plotting both our scatter plot and line of best fit along with labeling our graph
+    plt.plot(basiAreas, heights, 'o', label = "original data")
+    ax.axline((0,res.intercept), slope = res.slope, label = "fitted line", color = "blue")
     plt.xlabel("Basal Areas (in Sq. Meter by Hectare)")
     plt.ylabel("Heights (in Meters)")
     plt.title("Basal Areas vs. Heights") 
+    plt.legend()
+
+    #converting our plot to an image to send to our webpage
     canvas = FigureCanvas(fig)
     img = BytesIO()
     fig.savefig(img)
     img.seek(0)
     return send_file(img, mimetype = "image/png")
 
+#Circumference and Height correlation coefficient route
+#This route also handles our linear regression equation and r-squared value
 @app.route("/circumCorrel")
 def circumCorrel():
     circumferences = []
@@ -345,10 +393,17 @@ def circumCorrel():
         if conn:
             conn.close()
     
+    res = stats.linregress(circumferences, heights)
     r = np.corrcoef(heights, circumferences)
     correlation = r[0][1]
-    return {"correlation" : correlation}
+    return {"correlation" : correlation,
+            "rSquared": res.rvalue**2,
+            "slope": res.slope,
+            "intercept": res.intercept}
 
+
+#Diameter and Height correlation coefficient route
+#This route also handles our linear regression equation and r-squared value
 @app.route("/diamCorrel")
 def diamCorrel():
     diameters = []
@@ -379,10 +434,17 @@ def diamCorrel():
         if conn:
             conn.close()
     
+    res = stats.linregress(diameters, heights)
     r = np.corrcoef(heights, diameters)
     correlation = r[0][1]
-    return {"correlation" : correlation}
+    return {"correlation" : correlation,
+            "rSquared" : res.rvalue**2,
+            "slope" : res.slope,
+            "intercept" : res.intercept}
 
+
+#Basal Area and Height correlation coefficient route
+#This route also handles our linear regression equation and r-squared value
 @app.route("/basiCorrel")
 def basiCorrel():
     basiAreas = []
@@ -413,10 +475,15 @@ def basiCorrel():
         if conn:
             conn.close()
     
+    res = stats.linregress(basiAreas, heights)
     r = np.corrcoef(heights, basiAreas)
     correlation = r[0][1]
-    return {"correlation" : correlation}
+    return {"correlation" : correlation,
+            "rSquared": res.rvalue**2,
+            "slope": res.slope,
+            "intercept": res.intercept}
 
+#A new observations post route, taking user input from an HTML form and inserting it into our database
 @app.route("/newObservations/new", methods = ["POST"])
 def insertObservations():
     newObservation= {}
@@ -453,6 +520,7 @@ def insertObservations():
         if conn:
             conn.close()
 
+#our new hypothesis testing route, taking a user hypothetical mean and testing it
 @app.route('/hypTest/new', methods = ["POST"])
 def hypothTest():
     jsonPostData = request.get_json()
@@ -481,13 +549,16 @@ def hypothTest():
         if conn:
             conn.close()
 
+    #Setting up our variables for the t-tests and confidence intervals
     heightSampStdDev = statistics.stdev(heights)
     heightSampMean = statistics.mean(heights)
     nObs = len(heights)
 
+    #calculating our t-scores and degrees of freedom
     tScore = (heightSampMean - testMean)/(heightSampStdDev/math.sqrt(nObs))
     degF = nObs - 1
 
+    #calculating our p-values and confidence intervals
     twoTailP = stats.t.sf(np.abs(tScore), degF) * 2
     leftTailP = stats.t.sf(np.abs(tScore), degF)
     rightTailP = 1 - stats.t.sf(np.abs(tScore), degF)
@@ -502,52 +573,48 @@ def hypothTest():
             "ninetyFiveCI": ninetyFiveCI,
             "ninetyNineCI": ninetyNineCI}
 
-@app.route('/linearRegress')
-def linearRegress():
-    linearRegression = ""
-    return {"linear regression": linearRegression}
-
+#our image accessing route
 @app.route('/images/<image_filename>')
 def get_image(image_filename):
     image_directory = './resources/img/'
     return send_from_directory(image_directory, image_filename)
 
+#our javascript accessing route
 @app.route('/js/<js_filename>')
 def get_js(js_filename):
     js_directory = './resources/js/'
     return send_from_directory(js_directory, js_filename)
 
+#our home page (index) route
 @app.route("/")
 def index():
     return render_template("index.html")
 
+#circumference page route
 @app.route("/circumferencePage")
 def circumferencePage():
     return render_template("circumferencePage.html")
 
+#diameter page route
 @app.route("/diameterPage")
 def diameterPage():
     return render_template("diameterPage.html")
 
+#basal area page route
 @app.route("/basiPage")
 def basiPage():
     return render_template("basiPage.html")
 
-@app.route("/predictiveStats")
-def predictiveStats():
-    return render_template("predictiveStats.html")
+#hypothesis test page route
+@app.route("/hypothesisTest")
+def hypTestRen():
+    return render_template("hypothesisTesting.html")
 
+#new observations page route
 @app.route("/newObservations")
 def newObservations():
     return render_template("newObservations.html")
 
-@app.route("/hypothesisTest")
-def hypTestRen():
-    return render_template("hypothesisTest.html")
-
-#@app.route("/favicon.ico")
-#def favIcon():
-    #return send_from_directory('./resources/img/', "favicon.ico")
 
 if __name__ == '__main__':
    app.run()
