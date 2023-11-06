@@ -9,7 +9,8 @@ Users can also add in their own observations to manipulate the data themselves.
 ### Getting Started  
 
 I chose to serve my app through a virtual environment (venv), so thats how I recommend you go about it. These are instructions for running the app locally on Windows.  
-First and foremost, make sure you have python installed, this can be found in the app store on Windows.
+First and foremost, make sure you have python installed, this can be found in the app store on Windows.  
+Open PowerShell and navigate to the directory that VegetationSampling is in.  
 In the python folder, install venv (`py -3 -m venv venv`).  
 Next, activate the virtual environment by running the following in the python directory: `venv\Scripts\activate`. You only need to run the activation script from now on.   
 Now you may need to install some of the packages we are using like Pandas, NumPy, and SciPy in your virtual environment.  
