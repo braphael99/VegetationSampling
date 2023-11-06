@@ -1,11 +1,15 @@
+//pulling HTML elements so they are less cumbersome
 const form = document.getElementById("hypothTestForm");
 const testingResults = document.getElementById("tests");
 
+//preventing the form submit from refreshing the page
 form.addEventListener('submit', (event) => {
     event.preventDefault();
 
+    //pulling the test mean out
     const testMean = document.getElementById("hypoMean").value;
 
+    //POSTing our test mean and retrieving the returned data
     fetch('/hypTest/new', {
         method: 'POST',
         headers: {
@@ -17,9 +21,10 @@ form.addEventListener('submit', (event) => {
     })
         .then(response => response.json())
         .then(data => {
+            //manipulating the HTML to display the JSON
             testingResults.innerHTML = `
             <div id = "twoTail>
-                <div id = "twoTailP">The p-value of our two-tail hypothesis test is ${data.twoTailP}.</div>
+                <div id = "twoTailP">The p-value of our two-tail hypothesis test is ${data.twoTailP.toFixed(3)}.</div>
                 <div id = "twoTail90"> At alpha of 0.1: ${data.twoTailP >= 0.1 ? "Fail to reject the null hypothesis." : "Reject the null hypothesis."}</div>
                 <div id = "twoTail95"> At alpha of 0.05: ${data.twoTailP >= 0.05 ? "Fail to reject the null hypothesis." : "Reject the null hypothesis."}</div>
                 <div id = "twoTail99"> At alpha of 0.01: ${data.twoTailP >= 0.01 ? "Fail to reject the null hypothesis." : "Reject the null hypothesis."}</div>
@@ -47,6 +52,7 @@ form.addEventListener('submit', (event) => {
             </div>`
         })
         .catch(error => {
+            //error handling
             console.error('Error', error);
         });
 });

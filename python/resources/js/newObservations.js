@@ -1,10 +1,13 @@
+//listening for the form submission
 document.getElementById("newObservation").addEventListener("click", () => {
+    //adding all our values to local variables for easier handling
     const CBH = document.getElementById("CBH").value;
     const height = document.getElementById("height").value;
     const DBH = document.getElementById("DBH").value;
     const BA = document.getElementById("BA").value;
     const dead = document.getElementById("dead").value;
 
+    //setting our variables up in a JSON-like structure
     const newObservation = {
         CBH: CBH,
         height: height,
@@ -13,6 +16,7 @@ document.getElementById("newObservation").addEventListener("click", () => {
         dead: dead
     };
 
+    //POSTing the data for storage
     const response = fetch("/newObservations/new", {
         method: "POST",
         headers: {
@@ -20,6 +24,7 @@ document.getElementById("newObservation").addEventListener("click", () => {
         },
         body: JSON.stringify(newObservation) 
     });
+    //confirmation pop-up
     confirm("Observation Posted!")
 });
 

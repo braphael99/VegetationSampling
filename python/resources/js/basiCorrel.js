@@ -1,9 +1,15 @@
+//fetching the basal area correlation, r-squared, and equation data
 fetch('/basiCorrel')
 .then(response => response.json())
 .then(data => {
+    //storing the data locally
     const correlation = data.correlation;
-// Manipulate the HTML to display the JSON data
-    document.getElementById('basiHolder').innerText = `The Correlation Coefficient is: ${correlation}`
+    const rSquared = data.rSquared;
+    const slope = data.slope;
+    const intercept = data.intercept;
+
+    // Manipulate the HTML to display the JSON data
+    document.getElementById('basiHolder').innerText = `The Correlation Coefficient is: ${correlation.toFixed(3)}`
     if (correlation >= -1.0 && correlation < -0.6){
         document.getElementById("correlationInterp").innerText = "The correlation is a very strongly negative correlation.";
     }
@@ -23,7 +29,11 @@ fetch('/basiCorrel')
         document.getElementById("correlationInterp").innerText = "The correlation is a very strong postitive correlation.";
     }
 
+    document.getElementById("basiRSquared").innerText = `The r-squared (coefficient of determination) value is ${rSquared.toFixed(3)}.`;
+    document.getElementById("basiEquation").innerText = `The slope-intercept form equation is y = ${slope.toFixed(3)}x + ${intercept.toFixed(3)}.`;
+
 })
 .catch(error => {
+    //error handling
     console.error('Error fetching data:', error);
 });
