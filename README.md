@@ -25,6 +25,7 @@ Have fun!
 -Implementing a delete observation feature  
 -More rigorous and thorough interpretations  
 -Website Icon  
+-Migrate to a PostgreSQL Database
 
 ### Licensing Information  
 The Vegetation Sampling dataset was pulled from Kaggle, posted by user Miguel Rojas. This dataset is being used under the [Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/) licensing rights. Here is the [Original Dataset](https://www.kaggle.com/datasets/itsmiguelrojas/humid-forest-sampling/).  
