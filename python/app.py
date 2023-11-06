@@ -1,12 +1,12 @@
 import requests
+import statistics
 import sqlite3
 from sqlite3 import Error
-import scipy
+from scipy import stats
 import numpy as np
 import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
-from scipy.stats import linregress
 import math
 from io import BytesIO
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
@@ -24,6 +24,7 @@ from flask import jsonify
 from flask import send_from_directory
 
 app = Flask(__name__)
+testMean = 0.0
 
 @app.route("/CBH")
 def getCBH():
@@ -416,9 +417,90 @@ def basiCorrel():
     correlation = r[0][1]
     return {"correlation" : correlation}
 
-@app.route('/hypothTest')
+@app.route("/newObservations/new", methods = ["POST"])
+def insertObservations():
+    newObservation= {}
+    conn = None
+    try:
+        jsonPostData = request.get_json()
+        CBH = int(jsonPostData["CBH"])
+        height = float(jsonPostData["height"])
+        DBH = float(jsonPostData["DBH"])
+        BA = float(jsonPostData["BA"])
+        dead = jsonPostData["dead"]
+
+        if DBH > 10: 
+            DBHclass = "1 cm < DBH <= 10 cm"
+        
+        else: 
+            DBHclass = "DBH > 10 cm"
+        
+        
+        conn = sqlite3.connect("../dbs/vegetationSampling.db")
+        conn.row_factory = sqlite3.Row
+        sql = """ 
+            INSERT INTO vegetation_sampling (CBH, height, DBH, BA, dead, DBHclass) VALUES (?,?,?,?,?,?)    
+        """
+        cursor = conn.cursor()
+        cursor.execute(sql, (CBH, height, DBH, BA, dead, DBHclass, ))
+        conn.commit()
+        conn.close()
+        return redirect(f"/newObservations")
+    except Error as e:
+        print(f"Error opening the database {e}")
+        abort(500)
+    finally:
+        if conn:
+            conn.close()
+
+@app.route('/hypTest/new', methods = ["POST"])
 def hypothTest():
-    return 0
+    jsonPostData = request.get_json()
+    testMean = float(jsonPostData["testMean"])
+    heights = []
+    conn = None
+    try:
+        conn = sqlite3.connect("../dbs/vegetationSampling.db")
+        conn.row_factory = sqlite3.Row
+        sql = """ 
+            SELECT vegetation_sampling.height
+            FROM vegetation_sampling
+            ORDER BY vegetation_sampling.id
+        """
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        rows = cursor.fetchall()  
+        for row in rows:
+            height = row["height"]
+            heights.append(height)
+
+    except Error as e:
+        print(f"Error opening the database {e}")
+        abort(500)
+    finally:
+        if conn:
+            conn.close()
+
+    heightSampStdDev = statistics.stdev(heights)
+    heightSampMean = statistics.mean(heights)
+    nObs = len(heights)
+
+    tScore = (heightSampMean - testMean)/(heightSampStdDev/math.sqrt(nObs))
+    degF = nObs - 1
+
+    twoTailP = stats.t.sf(np.abs(tScore), degF) * 2
+    leftTailP = stats.t.sf(np.abs(tScore), degF)
+    rightTailP = 1 - stats.t.sf(np.abs(tScore), degF)
+    ninetyCI = stats.t.interval(confidence = 0.90, df = degF, loc = heightSampMean, scale = heightSampStdDev)
+    ninetyFiveCI = stats.t.interval(confidence = 0.95, df = degF, loc = heightSampMean, scale = heightSampStdDev)
+    ninetyNineCI = stats.t.interval(confidence = 0.99, df = degF, loc = heightSampMean, scale = heightSampStdDev)
+
+    return {"twoTailP": twoTailP,
+            "leftTailP": leftTailP,
+            "rightTailP": rightTailP,
+            "ninetyCI": ninetyCI,
+            "ninetyFiveCI": ninetyFiveCI,
+            "ninetyNineCI": ninetyNineCI}
 
 @app.route('/linearRegress')
 def linearRegress():
@@ -458,6 +540,14 @@ def predictiveStats():
 @app.route("/newObservations")
 def newObservations():
     return render_template("newObservations.html")
+
+@app.route("/hypothesisTest")
+def hypTestRen():
+    return render_template("hypothesisTest.html")
+
+#@app.route("/favicon.ico")
+#def favIcon():
+    #return send_from_directory('./resources/img/', "favicon.ico")
 
 if __name__ == '__main__':
    app.run()
