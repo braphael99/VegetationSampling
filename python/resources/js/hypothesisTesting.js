@@ -1,3 +1,9 @@
+fetch('/heightMean')
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById("sampleMean").innerText = `The sample mean for height is ${data.heightAvg.toFixed(3)}.`;
+    })
+
 //pulling HTML elements so they are less cumbersome
 const form = document.getElementById("hypothTestForm");
 const testingResults = document.getElementById("tests");

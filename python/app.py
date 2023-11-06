@@ -208,6 +208,36 @@ def getDBHClass():
 
     return {"Classes": classes} 
 
+#App route to calculate the mean of the heights.
+@app.route("/heightMean")
+def heightMean():
+    heights = []
+
+    try:
+        conn = sqlite3.connect("../dbs/vegetationSampling.db")
+        conn.row_factory = sqlite3.Row
+        sql = """ 
+            SELECT vegetation_sampling.height
+            FROM vegetation_sampling
+            ORDER BY vegetation_sampling.id
+        """
+        cursor = conn.cursor()
+        cursor.execute(sql)
+        rows = cursor.fetchall()  
+        for row in rows:
+            height = row["height"]
+            heights.append(float(height))
+
+    except Error as e:
+        print(f"Error opening the database {e}")
+        abort(500)
+    finally:
+        if conn:
+            conn.close()
+
+    heightAvg = statistics.mean(heights)
+    return {"heightAvg": heightAvg}
+
 #Our first interesting routes, sending graph data out
 
 #Circumference and Height Graph route
